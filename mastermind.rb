@@ -16,6 +16,7 @@ class MastermindBoard
   end
 
   def make_guess(guess)
+    guess = guess.split ""
     return nil unless valid_code? guess
 
     if game_over?
@@ -31,13 +32,14 @@ class MastermindBoard
   end
 
   def set_code(code)
+    code = code.split ""
     if guesses.size > 0
       puts "You can't change the code mid-game!"
       return false  # If it's mid-game, I don't want to bother with other checks
     end
 
     valid = valid_code? code
-    @code = code.split("") if valid
+    @code = code if valid
     return valid
   end
 
@@ -60,7 +62,6 @@ class MastermindBoard
   end
 
   def evaluate_guess(guess)
-    guess = guess.split ""
     total_pegs = 0
     unique_code_colors = @code.uniq
     unique_code_colors.each do |color|
@@ -75,15 +76,14 @@ class MastermindBoard
 
   def valid_code?(code)
     valid = true
-    if code.length != @spaces
+    if code.size != @spaces
       puts "Please enter a #{@spaces}-character code."
       valid = false
     end
 
-    characters = code.split ""
-    characters.each do |character|
-      if !colors.include? character
-        puts "Invalid character: #{character}"
+    code.each do |color|
+      if !colors.include? color
+        puts "Invalid color: #{color}"
         valid = false
       end
     end
@@ -91,12 +91,3 @@ class MastermindBoard
     return valid
   end
 end
-
-board = MastermindBoard.new
-board.set_code "GBRK"
-puts board.make_guess "YYBB"
-puts board.make_guess "KRRY"
-puts board.make_guess "GKGY"
-puts board.make_guess "RRKY"
-puts board.make_guess "BRGK"
-puts board.make_guess "GBRK"
