@@ -19,8 +19,15 @@ class MastermindBoard
 
   end
 
-  def set_code()
+  def set_code(code)
+    if guesses.size > 0
+      puts "You can't change the code mid-game!"
+      return false  # If it's mid-game, I don't want to bother with other checks
+    end
 
+    valid = valid_code? code
+    @code = characters if valid
+    return valid
   end
 
   def to_s
@@ -30,5 +37,23 @@ class MastermindBoard
   private
   def evaluate_guess
 
+  end
+
+  def valid_code?(code)
+    valid = true
+    if code.length != @spaces
+      puts "Please enter a #{@spaces}-character code."
+      valid = false
+    end
+
+    characters = code.split ""
+    characters.each do |character|
+      if !colors.include? character
+        puts "Invalid character: #{character}"
+        valid = false
+      end
+    end
+
+    return valid
   end
 end
