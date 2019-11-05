@@ -12,7 +12,7 @@ class MastermindBoard
   end
 
   def game_over?
-    return true if @guesses.include? @code || @guesses.size >= @max_guesses
+    return true if (@guesses.include? @code) || (@guesses.size >= @max_guesses)
   end
 
   def make_guess(guess)
@@ -21,7 +21,7 @@ class MastermindBoard
       return nil
     end
 
-    guess = guess.split ""
+    guess = guess.upcase.split ""
     return nil unless valid_code? guess
 
     response = evaluate_guess guess
@@ -32,16 +32,16 @@ class MastermindBoard
       puts "How did you manage to take more guesses than allowed?"
       puts "Max guesses: #{@max_guesses}; total guesses: #{@guesses.size}"
     elsif guess == @code
-      victor = "Codebreaker"
+      @victor = "codebreaker"
     elsif @guesses.size == @max_guesses
-      victor = "Codemaker"
+      @victor = "codemaker"
     end
 
     return response
   end
 
   def set_code(code)
-    code = code.split ""
+    code = code.upcase.split ""
     if guesses.size > 0
       puts "You can't change the code mid-game!"
       return false  # If it's mid-game, I don't want to bother with other checks
@@ -100,3 +100,34 @@ class MastermindBoard
     return valid
   end
 end
+
+def choose_code(colors, length)
+  code = ""
+  length.times do
+    choice = (rand * colors.size).to_i
+    code += colors[choice]
+  end
+  return code
+end
+
+board = MastermindBoard.new
+puts "Think you're a mastermind?"
+puts "Try to guess the secret code within *#{board.max_guesses}* tries!"
+puts "A + means you have a match in the right position;"
+puts "a - means you have a match in the wrong position."
+puts "The code is *#{board.spaces}* characters long,"
+puts "and made up of a combination of these letters:"
+puts "#{board.colors.join(", ")}"
+puts ""
+
+code = choose_code(board.colors, board.spaces)
+board.set_code code
+
+while !board.game_over?
+  print "Guess #{board.guesses.size + 1}: "
+  guess = gets.chomp
+  puts board.make_guess guess
+end
+
+puts "The code was: #{code}"
+puts "Winner: #{board.victor}!"
