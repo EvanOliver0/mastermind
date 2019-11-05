@@ -1,32 +1,41 @@
 class MastermindBoard
-  attr_reader :colors, :guesses, :max_turns, :responses, :spaces, :victor
+  attr_reader :colors, :guesses, :max_guesses, :responses, :spaces, :victor
 
   def initialize(colors = ["K", "W", "R", "G", "B", "Y"], spaces = 4,
-                 max_turns = 12)
+                 max_guesses = 12)
     @colors = colors
     @spaces = spaces
-    @max_turns = max_turns
+    @max_guesses = max_guesses
     @guesses = []
     @responses = []
     @victor = nil
   end
 
   def game_over?
-    return true if @guesses.include? @code || @guesses.size >= @max_turns
+    return true if @guesses.include? @code || @guesses.size >= @max_guesses
   end
 
   def make_guess(guess)
-    guess = guess.split ""
-    return nil unless valid_code? guess
-
     if game_over?
       puts "Can't make a new guess; the game is already over!"
       return nil
     end
 
+    guess = guess.split ""
+    return nil unless valid_code? guess
+
     response = evaluate_guess guess
     @guesses.push guess
     @responses.push response
+
+    if @guesses.size > @max_guesses
+      puts "How did you manage to take more guesses than allowed?"
+      puts "Max guesses: #{@max_guesses}; total guesses: #{@guesses.size}"
+    elsif guess == @code
+      victor = "Codebreaker"
+    elsif @guesses.size == @max_guesses
+      victor = "Codemaker"
+    end
 
     return response
   end
