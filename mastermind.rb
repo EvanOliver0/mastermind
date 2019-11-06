@@ -53,7 +53,19 @@ class MastermindBoard
   end
 
   def to_s
-
+    representation = "*" * (@spaces * 2 + 3)
+    representation += "\n*" + " " * @spaces + "|"
+    representation += game_over? ? @code.join("") : ("?" * @spaces)
+    representation += "*"
+    (@max_guesses - 1).downto(0) do |i|
+      if i > (@guesses.size - 1)
+        representation += "\n*#{' ' * @spaces}|#{'-' * @spaces}*"
+      else
+        representation += "\n*#{@responses[i]}|#{@guesses[i].join('')}*"
+      end
+    end
+    representation += "\n" + "*" * (@spaces * 2 + 3)
+    return representation
   end
 
   private
@@ -79,8 +91,9 @@ class MastermindBoard
 
     red_pegs = count_matches(guess, @code)
     white_pegs = total_pegs - red_pegs
+    blank = @spaces - total_pegs
 
-    return ("+" * red_pegs) + ("-" * white_pegs)
+    return (" " * blank) + ("-" * white_pegs) + ("+" * red_pegs)
   end
 
   def valid_code?(code)
@@ -123,11 +136,12 @@ puts ""
 code = choose_code(board.colors, board.spaces)
 board.set_code code
 
+puts board
 while !board.game_over?
   print "Guess #{board.guesses.size + 1}: "
   guess = gets.chomp
-  puts board.make_guess guess
+  board.make_guess guess
+  puts board
 end
 
-puts "The code was: #{code}"
 puts "Winner: #{board.victor}!"
