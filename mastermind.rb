@@ -116,48 +116,79 @@ end
 
 class Player
   attr_reader :score
-  def initialize
+  def initialize(colors, spaces)
     @score = 0
+    @colors = colors
+    @code_length = spaces
   end
 
   def choose_code
-    puts "Override choose_code with a child method!"
   end
 
   def increase_score(points)
     @score += points
   end
 
-  def make_guess
-    puts "Override make_guess with a child method!"
+  def make_guess(colors, length)
   end
 end
 
 class ComputerPlayer < Player
-  def choose_code(colors, length)
+  def initialize(colors, spaces)
+    super
+    @possibilities = @colors
+  end
+
+  def choose_code
     code = ""
-    length.times do
-      choice = (rand * colors.size).to_i
-      code += colors[choice]
+    @code_length.times do
+      choice = (rand * @possibilities.size).to_i
+      code += @possibilities[choice]
     end
     return code
   end
 
-  def make_guess(colors, length)
+  def make_guess(past_guesses, past_responses)
     sleep 2
-    guess = choose_code(colors, length)
+    if past_guesses.empty?
+      guess = choose_code()
+    else
+      remove_impossible(past_guesses.last, past_responses.last)
+      good = false
+      until good
+        guess = choose_code()
+        good = good_guess?(guess, past_guesses, past_responses)
+      end
+    end
     puts guess
     return guess
+  end
+
+  private
+  def good_guess?(guess, past_guesses, past_responses)
+    test_board = MastermindBoard.new(@colors, @code_length, past_guesses.size)
+    test_board.set_code guess
+    past_guesses.size.times do |i|
+      past_guess = past_guesses[i].join("")
+      past_response = past_responses[i]
+      return false unless test_board.make_guess(past_guess) == past_response
+    end
+    return true
+  end
+
+  def remove_impossible(guess, response)
+    pegs = response.length - response.count(" ")
+    @possibilities -= guess if pegs == 0
   end
 end
 
 class HumanPlayer < Player
-  def choose_code(colors, length)
+  def choose_code
     print "Choose a secret code: "
     return gets.chomp
   end
 
-  def make_guess(colors, length)
+  def make_guess(past_guesses, past_responses)
     return gets.chomp
   end
 end
@@ -176,23 +207,23 @@ puts ""
 print "Would you like to be the codemaker or codebreaker? (m/B) "
 choice = gets.chomp.downcase
 if choice == "m"
-  codemaker = HumanPlayer.new
-  codebreaker = ComputerPlayer.new
+  codemaker = HumanPlayer.new(board.colors, board.spaces)
+  codebreaker = ComputerPlayer.new(board.colors, board.spaces)
 else
-  codemaker = ComputerPlayer.new
-  codebreaker = HumanPlayer.new
+  codemaker = ComputerPlayer.new(board.colors, board.spaces)
+  codebreaker = HumanPlayer.new(board.colors, board.spaces)
 end
 
 valid_code = false
 until valid_code
-  code = codemaker.choose_code(board.colors, board.spaces)
+  code = codemaker.choose_code
   valid_code = board.set_code code
 end
 
 puts board
 while !board.game_over?
   print "Guess #{board.guesses.size + 1}: "
-  guess = codebreaker.make_guess(board.colors, board.spaces)
+  guess = codebreaker.make_guess(board.guesses, board.responses)
   board.make_guess guess
   puts board
 end
