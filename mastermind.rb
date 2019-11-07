@@ -183,8 +183,11 @@ else
   codebreaker = HumanPlayer.new
 end
 
-code = codemaker.choose_code(board.colors, board.spaces)
-board.set_code code
+valid_code = false
+until valid_code
+  code = codemaker.choose_code(board.colors, board.spaces)
+  valid_code = board.set_code code
+end
 
 puts board
 while !board.game_over?
