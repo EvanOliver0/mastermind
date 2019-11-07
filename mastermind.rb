@@ -29,7 +29,7 @@ class MastermindBoard
     @responses.push response
 
     if @guesses.size > @max_guesses
-      puts "How did you manage to take more guesses than allowed?"
+      puts "How did you manage to make more guesses than allowed?"
       puts "Max guesses: #{@max_guesses}; total guesses: #{@guesses.size}"
     elsif guess == @code
       @victor = "codebreaker"
@@ -114,32 +114,82 @@ class MastermindBoard
   end
 end
 
-def choose_code(colors, length)
-  code = ""
-  length.times do
-    choice = (rand * colors.size).to_i
-    code += colors[choice]
+class Player
+  attr_reader :score
+  def initialize
+    @score = 0
   end
-  return code
+
+  def choose_code
+    puts "Override choose_code with a child method!"
+  end
+
+  def increase_score(points)
+    @score += points
+  end
+
+  def make_guess
+    puts "Override make_guess with a child method!"
+  end
+end
+
+class ComputerPlayer < Player
+  def choose_code(colors, length)
+    code = ""
+    length.times do
+      choice = (rand * colors.size).to_i
+      code += colors[choice]
+    end
+    return code
+  end
+
+  def make_guess(colors, length)
+    sleep 2
+    guess = choose_code(colors, length)
+    puts guess
+    return guess
+  end
+end
+
+class HumanPlayer < Player
+  def choose_code(colors, length)
+    print "Choose a secret code: "
+    return gets.chomp
+  end
+
+  def make_guess(colors, length)
+    return gets.chomp
+  end
 end
 
 board = MastermindBoard.new
 puts "Think you're a mastermind?"
-puts "Try to guess the secret code within *#{board.max_guesses}* tries!"
-puts "A + means you have a match in the right position;"
-puts "a - means you have a match in the wrong position."
-puts "The code is *#{board.spaces}* characters long,"
+puts "The codemaker will choose a secret code, and the codebreaker must"
+puts "try to guess the secret code within *#{board.max_guesses}* tries!"
+puts "A + means there's a match in the right position;"
+puts "a - means there's match in the wrong position."
+puts "The code will be *#{board.spaces}* characters long,"
 puts "and made up of a combination of these letters:"
 puts "#{board.colors.join(", ")}"
 puts ""
 
-code = choose_code(board.colors, board.spaces)
+print "Would you like to be the codemaker or codebreaker? (m/B) "
+choice = gets.chomp.downcase
+if choice == "m"
+  codemaker = HumanPlayer.new
+  codebreaker = ComputerPlayer.new
+else
+  codemaker = ComputerPlayer.new
+  codebreaker = HumanPlayer.new
+end
+
+code = codemaker.choose_code(board.colors, board.spaces)
 board.set_code code
 
 puts board
 while !board.game_over?
   print "Guess #{board.guesses.size + 1}: "
-  guess = gets.chomp
+  guess = codebreaker.make_guess(board.colors, board.spaces)
   board.make_guess guess
   puts board
 end
