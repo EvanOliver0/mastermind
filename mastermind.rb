@@ -10,12 +10,8 @@ class MastermindBoard
     @responses = []
   end
 
-  def game_over?
-    return true if (@guesses.include? @code) || (@guesses.size >= @max_guesses)
-  end
-
   def make_guess(guess)
-    if game_over?
+    if round_over?
       puts "Can't make a new guess; the game is already over!"
       return nil
     end
@@ -43,6 +39,14 @@ class MastermindBoard
     return points
   end
 
+  def reset!
+    initialize(@colors, @code_length, @max_guesses)
+  end
+
+  def round_over?
+    return true if (@guesses.include? @code) || (@guesses.size >= @max_guesses)
+  end
+
   def set_code(code)
     code = code.upcase.split ""
     if guesses.size > 0
@@ -58,7 +62,7 @@ class MastermindBoard
   def to_s
     representation = "*" * (@code_length * 2 + 3)
     representation += "\n*" + " " * @code_length + "|"
-    representation += game_over? ? @code.join("") : ("?" * @code_length)
+    representation += round_over? ? @code.join("") : ("?" * @code_length)
     representation += "*"
     (@max_guesses - 1).downto(0) do |i|
       if i > (@guesses.size - 1)
@@ -272,8 +276,32 @@ def only_alphabetic?(text)
   return /[^a-zA-Z]/.match(text).nil?
 end
 
+def play_round(board, codemaker, codebreaker)
+  code = set_code(board, codemaker)
+
+  puts board
+  while !board.round_over?
+    print "Guess #{board.guesses.size + 1}: "
+    guess = codebreaker.make_guess(board.guesses, board.responses)
+    board.make_guess guess
+    puts board
+  end
+
+  codemaker.increase_score board.points
+  puts "#{board.points} points for #{codemaker.name}!"
+end
+
 def positive_integer?(text)
   return (Integer(text) > 0 rescue false)
+end
+
+def set_code(board, player)
+  valid = false
+  until valid
+    code = player.choose_code
+    valid = board.set_code code
+  end
+  return code
 end
 
 puts "**** MASTERMIND ****"
@@ -289,6 +317,9 @@ else
   board = MastermindBoard.new
 end
 
+human = HumanPlayer.new("Human", board.colors, board.code_length)
+computer = ComputerPlayer.new("Computer", board.colors, board.code_length)
+
 puts "\n"
 puts "Ok, think you're a mastermind?"
 puts "The codemaker will choose a secret code, and the codebreaker must"
@@ -300,28 +331,21 @@ puts "and made up of a combination of these letters:"
 puts "#{board.colors.join(", ")}"
 puts ""
 
+rounds = get_integer("How many rounds should we play? ")
 print "Would you like to be the codemaker or codebreaker? (m/B) "
 choice = gets.chomp.downcase
-if choice == "m"
-  codemaker = HumanPlayer.new("Human", board.colors, board.code_length)
-  codebreaker = ComputerPlayer.new("Computer", board.colors, board.code_length)
-else
-  codemaker = ComputerPlayer.new("Computer", board.colors, board.code_length)
-  codebreaker = HumanPlayer.new("Human", board.colors, board.code_length)
-end
+choice == "m" ? (codemaker, codebreaker = human, computer)
+              : (codemaker, codebreaker = computer, human)
 
-valid_code = false
-until valid_code
-  code = codemaker.choose_code
-  valid_code = board.set_code code
+rounds.times do |round|
+  puts "Round #{round + 1}!"
+  2.times do
+    play_round(board, codemaker, codebreaker)
+    codemaker, codebreaker = codebreaker, codemaker
+    board.reset!
+  end
 end
-
-puts board
-while !board.game_over?
-  print "Guess #{board.guesses.size + 1}: "
-  guess = codebreaker.make_guess(board.guesses, board.responses)
-  board.make_guess guess
-  puts board
-end
-
-puts "#{board.points} points for #{codemaker.name}!"
+puts "Final score:"
+puts "#{human.name}: #{human.points}"
+puts "#{computer.name}: #{computer.points}"
+computer.points > human.points ? (puts "I win!") : (puts "You win!")
