@@ -155,7 +155,15 @@ class ComputerPlayer < Player
   end
 
   def choose_code
-    return @possibilities.pop
+    code = @possibilities.pop
+    if code.nil?
+      puts "Woah, I ran out of possibilities - something's wrong."
+      puts "Let me start fresh..."
+      @possibilities = generate_combos(@colors, @code_length)
+      puts "...there."
+      code = @possibilities.pop
+    end
+    return code
   end
 
   def make_guess(past_guesses, past_responses)
