@@ -160,14 +160,11 @@ class ComputerPlayer < Player
 
   def make_guess(past_guesses, past_responses)
     sleep 2
-    if past_guesses.empty?
+    guess = choose_code
+    good = good_guess?(guess, past_guesses, past_responses)
+    until good
       guess = choose_code
-    else
-      good = false
-      until good
-        guess = choose_code
-        good = good_guess?(guess, past_guesses, past_responses)
-      end
+      good = good_guess?(guess, past_guesses, past_responses)
     end
     puts guess
     return guess
@@ -181,6 +178,7 @@ class ComputerPlayer < Player
   end
 
   def good_guess?(guess, past_guesses, past_responses)
+    return true if past_guesses.empty?
     test_board = MastermindBoard.new(@colors, @code_length, past_guesses.size)
     test_board.set_code guess
     past_guesses.size.times do |i|
